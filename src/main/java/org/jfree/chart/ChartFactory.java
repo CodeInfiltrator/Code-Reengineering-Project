@@ -245,16 +245,20 @@ public abstract class ChartFactory {
         PiePlot plot = new PiePlot(dataset);
         plot.setLabelGenerator(new StandardPieSectionLabelGenerator());
         plot.setInsets(new RectangleInsets(0.0, 5.0, 5.0, 5.0));
+        configureInteractivity(plot, tooltips, urls);
+        JFreeChart chart = new JFreeChart(title, JFreeChart.DEFAULT_TITLE_FONT,
+                plot, legend);
+        currentTheme.apply(chart);
+        return chart;
+    }
+
+    private static void configureInteractivity(PiePlot plot, boolean tooltips, boolean urls) {
         if (tooltips) {
             plot.setToolTipGenerator(new StandardPieToolTipGenerator());
         }
         if (urls) {
             plot.setURLGenerator(new StandardPieURLGenerator());
         }
-        JFreeChart chart = new JFreeChart(title, JFreeChart.DEFAULT_TITLE_FONT,
-                plot, legend);
-        currentTheme.apply(chart);
-        return chart;
     }
 
     /**
