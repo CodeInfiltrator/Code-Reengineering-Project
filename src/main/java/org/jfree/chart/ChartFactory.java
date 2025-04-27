@@ -194,21 +194,17 @@ public abstract class ChartFactory {
      *
      * @return A pie chart.
      */
-    public static JFreeChart createPieChart(String title, PieDataset dataset,
-            boolean legend, boolean tooltips, Locale locale) {
-
-        PiePlot plot = new PiePlot(dataset);
-        plot.setLabelGenerator(new StandardPieSectionLabelGenerator(locale));
-        plot.setInsets(new RectangleInsets(0.0, 5.0, 5.0, 5.0));
-        if (tooltips) {
-            plot.setToolTipGenerator(new StandardPieToolTipGenerator(locale));
-        }
-        JFreeChart chart = new JFreeChart(title, JFreeChart.DEFAULT_TITLE_FONT,
-                plot, legend);
+    public static JFreeChart createPieChart(PieChartConfig config) {
+       
+        PiePlot plot = new PiePlot(config.getDataset());
+        ChartStyler.applyDefaultPiePlotStyle(plot);
+        JFreeChart chart = new JFreeChart(config.getTitle(), JFreeChart.DEFAULT_TITLE_FONT,
+                plot, config.isLegend());
         currentTheme.apply(chart);
         return chart;
-
+        
     }
+
 
     /**
      * Creates a pie chart with default settings.
@@ -243,8 +239,7 @@ public abstract class ChartFactory {
             boolean legend, boolean tooltips, boolean urls) {
 
         PiePlot plot = new PiePlot(dataset);
-        plot.setLabelGenerator(new StandardPieSectionLabelGenerator());
-        plot.setInsets(new RectangleInsets(0.0, 5.0, 5.0, 5.0));
+        ChartStyler.applyDefaultPiePlotStyle(plot);
         configureInteractivity(plot, tooltips, urls);
         JFreeChart chart = new JFreeChart(title, JFreeChart.DEFAULT_TITLE_FONT,
                 plot, legend);
@@ -305,8 +300,7 @@ public abstract class ChartFactory {
             Locale locale, boolean subTitle, boolean showDifference) {
 
         PiePlot plot = new PiePlot(dataset);
-        plot.setLabelGenerator(new StandardPieSectionLabelGenerator(locale));
-        plot.setInsets(new RectangleInsets(0.0, 5.0, 5.0, 5.0));
+        ChartStyler.applyDefaultPiePlotStyle(plot);
 
         if (tooltips) {
             plot.setToolTipGenerator(new StandardPieToolTipGenerator(locale));
@@ -423,15 +417,9 @@ public abstract class ChartFactory {
             boolean urls, boolean subTitle, boolean showDifference) {
 
         PiePlot plot = new PiePlot(dataset);
-        plot.setLabelGenerator(new StandardPieSectionLabelGenerator());
-        plot.setInsets(new RectangleInsets(0.0, 5.0, 5.0, 5.0));
+        ChartStyler.applyDefaultPiePlotStyle(plot);
 
-        if (tooltips) {
-            plot.setToolTipGenerator(new StandardPieToolTipGenerator());
-        }
-        if (urls) {
-            plot.setURLGenerator(new StandardPieURLGenerator());
-        }
+        configureInteractivity(plot, tooltips, urls);
 
         List keys = dataset.getKeys();
         DefaultPieDataset series = null;
@@ -518,8 +506,8 @@ public abstract class ChartFactory {
             boolean legend, boolean tooltips, Locale locale) {
 
         RingPlot plot = new RingPlot(dataset);
-        plot.setLabelGenerator(new StandardPieSectionLabelGenerator(locale));
-        plot.setInsets(new RectangleInsets(0.0, 5.0, 5.0, 5.0));
+        ChartStyler.applyDefaultPiePlotStyle(plot);
+
         if (tooltips) {
             plot.setToolTipGenerator(new StandardPieToolTipGenerator(locale));
         }
@@ -547,8 +535,7 @@ public abstract class ChartFactory {
             boolean legend, boolean tooltips, boolean urls) {
 
         RingPlot plot = new RingPlot(dataset);
-        plot.setLabelGenerator(new StandardPieSectionLabelGenerator());
-        plot.setInsets(new RectangleInsets(0.0, 5.0, 5.0, 5.0));
+        ChartStyler.applyDefaultPiePlotStyle(plot);
         if (tooltips) {
             plot.setToolTipGenerator(new StandardPieToolTipGenerator());
         }
