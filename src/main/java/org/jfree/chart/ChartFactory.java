@@ -196,13 +196,13 @@ public abstract class ChartFactory {
      */
     public static JFreeChart createPieChart(PieChartConfig config) {
        
-        PiePlot plot = new PiePlot(config.getDataset());
+        PiePlot plot = new PiePlot(config.getData().getDataset());
         ChartStyler.applyDefaultPiePlotStyle(plot);
         JFreeChart chart = new JFreeChart(config.getTitle(), JFreeChart.DEFAULT_TITLE_FONT,
                 plot, config.isLegend());
         currentTheme.apply(chart);
         return chart;
-        
+
     }
 
 
@@ -643,43 +643,70 @@ public abstract class ChartFactory {
             boolean legend, boolean tooltips, boolean urls) {
 
         Args.nullNotPermitted(orientation, "orientation");
-        CategoryAxis categoryAxis = new CategoryAxis(categoryAxisLabel);
-        ValueAxis valueAxis = new NumberAxis(valueAxisLabel);
 
-        BarRenderer renderer = new BarRenderer();
-        if (orientation == PlotOrientation.HORIZONTAL) {
-            ItemLabelPosition position1 = new ItemLabelPosition(
-                    ItemLabelAnchor.OUTSIDE3, TextAnchor.CENTER_LEFT);
-            renderer.setDefaultPositiveItemLabelPosition(position1);
-            ItemLabelPosition position2 = new ItemLabelPosition(
-                    ItemLabelAnchor.OUTSIDE9, TextAnchor.CENTER_RIGHT);
-            renderer.setDefaultNegativeItemLabelPosition(position2);
-        } else if (orientation == PlotOrientation.VERTICAL) {
-            ItemLabelPosition position1 = new ItemLabelPosition(
-                    ItemLabelAnchor.OUTSIDE12, TextAnchor.BOTTOM_CENTER);
-            renderer.setDefaultPositiveItemLabelPosition(position1);
-            ItemLabelPosition position2 = new ItemLabelPosition(
-                    ItemLabelAnchor.OUTSIDE6, TextAnchor.TOP_CENTER);
-            renderer.setDefaultNegativeItemLabelPosition(position2);
-        }
-        if (tooltips) {
-            renderer.setDefaultToolTipGenerator(
-                    new StandardCategoryToolTipGenerator());
-        }
-        if (urls) {
-            renderer.setDefaultItemURLGenerator(
-                    new StandardCategoryURLGenerator());
-        }
+        CategoryAxis categoryAxis = createCategoryAxis(categoryAxisLabel);
+        ValueAxis valueAxis = createValueAxis(valueAxisLabel);
 
-        CategoryPlot plot = new CategoryPlot(dataset, categoryAxis, valueAxis,
-                renderer);
+        BarRenderer renderer = createBarRenderer(orientation, tooltips, urls);
+
+        CategoryPlot plot = new CategoryPlot(dataset, categoryAxis, valueAxis, renderer);
         plot.setOrientation(orientation);
-        JFreeChart chart = new JFreeChart(title, JFreeChart.DEFAULT_TITLE_FONT,
-                plot, legend);
-        currentTheme.apply(chart);
-        return chart;
 
+        JFreeChart chart = new JFreeChart(title, JFreeChart.DEFAULT_TITLE_FONT, plot, legend);
+        applyChartTheme(chart);
+
+        return chart;
     }
+
+private static CategoryAxis createCategoryAxis(String categoryAxisLabel) {
+    return new CategoryAxis(categoryAxisLabel);
+}
+
+private static ValueAxis createValueAxis(String valueAxisLabel) {
+    return new NumberAxis(valueAxisLabel);
+}
+
+private static BarRenderer createBarRenderer(PlotOrientation orientation, boolean tooltips, boolean urls) {
+    BarRenderer renderer = new BarRenderer();
+    
+    configureItemLabelPositions(renderer, orientation);
+
+    if (tooltips) {
+        renderer.setDefaultToolTipGenerator(new StandardCategoryToolTipGenerator());
+    }
+    if (urls) {
+        renderer.setDefaultItemURLGenerator(new StandardCategoryURLGenerator());
+    }
+
+    return renderer;
+}
+
+private static void configureItemLabelPositions(BarRenderer renderer, PlotOrientation orientation) {
+    if (orientation == PlotOrientation.HORIZONTAL) {
+        setHorizontalItemLabelPositions(renderer);
+    } else if (orientation == PlotOrientation.VERTICAL) {
+        setVerticalItemLabelPositions(renderer);
+    }
+}
+
+private static void setHorizontalItemLabelPositions(BarRenderer renderer) {
+    ItemLabelPosition position1 = new ItemLabelPosition(
+            ItemLabelAnchor.OUTSIDE3, TextAnchor.CENTER_LEFT);
+    renderer.setDefaultPositiveItemLabelPosition(position1);
+    ItemLabelPosition position2 = new ItemLabelPosition(
+            ItemLabelAnchor.OUTSIDE9, TextAnchor.CENTER_RIGHT);
+    renderer.setDefaultNegativeItemLabelPosition(position2);
+}
+
+private static void setVerticalItemLabelPositions(BarRenderer renderer) {
+    ItemLabelPosition position1 = new ItemLabelPosition(
+            ItemLabelAnchor.OUTSIDE12, TextAnchor.BOTTOM_CENTER);
+    renderer.setDefaultPositiveItemLabelPosition(position1);
+    ItemLabelPosition position2 = new ItemLabelPosition(
+            ItemLabelAnchor.OUTSIDE6, TextAnchor.TOP_CENTER);
+    renderer.setDefaultNegativeItemLabelPosition(position2);
+}
+
 
     /**
      * Creates a stacked bar chart with default settings.  The chart object
@@ -1015,33 +1042,51 @@ public abstract class ChartFactory {
      * @return A Gantt chart.
      */
     public static JFreeChart createGanttChart(String title,
-            String categoryAxisLabel, String dateAxisLabel,
-            IntervalCategoryDataset dataset, boolean legend, boolean tooltips,
-            boolean urls) {
+                String categoryAxisLabel, String dateAxisLabel,
+                IntervalCategoryDataset dataset, boolean legend, boolean tooltips,
+                boolean urls) {
 
-        CategoryAxis categoryAxis = new CategoryAxis(categoryAxisLabel);
-        DateAxis dateAxis = new DateAxis(dateAxisLabel);
+            CategoryAxis categoryAxis = createCategoryAxis(categoryAxisLabel);
+            DateAxis dateAxis = createDateAxis(dateAxisLabel);
+            CategoryItemRenderer renderer = createGanttRenderer(tooltips, urls);
 
-        CategoryItemRenderer renderer = new GanttRenderer();
-        if (tooltips) {
-            renderer.setDefaultToolTipGenerator(
-                    new IntervalCategoryToolTipGenerator(
-                    "{3} - {4}", DateFormat.getDateInstance()));
-        }
-        if (urls) {
-            renderer.setDefaultItemURLGenerator(
-                    new StandardCategoryURLGenerator());
+            CategoryPlot plot = createGanttPlot(dataset, categoryAxis, dateAxis, renderer);
+
+            JFreeChart chart = new JFreeChart(title, JFreeChart.DEFAULT_TITLE_FONT, plot, legend);
+            currentTheme.apply(chart);  // Tetap seperti diminta
+            return chart;
         }
 
-        CategoryPlot plot = new CategoryPlot(dataset, categoryAxis, dateAxis,
-                renderer);
-        plot.setOrientation(PlotOrientation.HORIZONTAL);
-        JFreeChart chart = new JFreeChart(title, JFreeChart.DEFAULT_TITLE_FONT,
-                plot, legend);
-        currentTheme.apply(chart);
-        return chart;
+        private static CategoryAxis createGanttCategoryAxis(String label) {
+            CategoryAxis axis = new CategoryAxis(label);
+            return axis;
+        }
 
-    }
+        private static DateAxis createDateAxis(String label) {
+            return new DateAxis(label);
+        }
+
+        private static CategoryItemRenderer createGanttRenderer(boolean tooltips, boolean urls) {
+            GanttRenderer renderer = new GanttRenderer();
+
+            if (tooltips) {
+                renderer.setDefaultToolTipGenerator(
+                        new IntervalCategoryToolTipGenerator("{3} - {4}", DateFormat.getDateInstance()));
+            }
+            if (urls) {
+                renderer.setDefaultItemURLGenerator(new StandardCategoryURLGenerator());
+            }
+
+            return renderer;
+        }
+
+        private static CategoryPlot createGanttPlot(IntervalCategoryDataset dataset, 
+                CategoryAxis categoryAxis, DateAxis dateAxis, CategoryItemRenderer renderer) {
+            CategoryPlot plot = new CategoryPlot(dataset, categoryAxis, dateAxis, renderer);
+            plot.setOrientation(PlotOrientation.HORIZONTAL);
+            return plot;
+        }
+
 
     /**
      * Creates a waterfall chart.  The chart object returned by this method
@@ -1063,55 +1108,62 @@ public abstract class ChartFactory {
      *
      * @return A waterfall chart.
      */
-    public static JFreeChart createWaterfallChart(String title,
-            String categoryAxisLabel, String valueAxisLabel,
-            CategoryDataset dataset, PlotOrientation orientation,
-            boolean legend, boolean tooltips, boolean urls) {
+        public static JFreeChart createWaterfallChart(String title,
+                String categoryAxisLabel, String valueAxisLabel,
+                CategoryDataset dataset, PlotOrientation orientation,
+                boolean legend, boolean tooltips, boolean urls) {
 
-        Args.nullNotPermitted(orientation, "orientation");
-        CategoryAxis categoryAxis = new CategoryAxis(categoryAxisLabel);
-        categoryAxis.setCategoryMargin(0.0);
+            Args.nullNotPermitted(orientation, "orientation");
 
-        ValueAxis valueAxis = new NumberAxis(valueAxisLabel);
+            CategoryAxis categoryAxis = createWaterfallCategoryAxis(categoryAxisLabel);
+            ValueAxis valueAxis = new NumberAxis(valueAxisLabel);
 
-        WaterfallBarRenderer renderer = new WaterfallBarRenderer();
-        if (orientation == PlotOrientation.HORIZONTAL) {
-            ItemLabelPosition position = new ItemLabelPosition(
-                    ItemLabelAnchor.CENTER, TextAnchor.CENTER,
-                    TextAnchor.CENTER, Math.PI / 2.0);
+            WaterfallBarRenderer renderer = createConfiguredWaterfallRenderer(orientation, tooltips, urls);
+
+            CategoryPlot plot = new CategoryPlot(dataset, categoryAxis, valueAxis, renderer);
+            plot.clearRangeMarkers();
+            plot.addRangeMarker(createBaselineMarker(), Layer.FOREGROUND);
+            plot.setOrientation(orientation);
+
+            JFreeChart chart = new JFreeChart(title, JFreeChart.DEFAULT_TITLE_FONT, plot, legend);
+            currentTheme.apply(chart);
+            return chart;
+        }
+
+        private static CategoryAxis createWaterfallCategoryAxis(String label) {
+            CategoryAxis axis = new CategoryAxis(label);
+            axis.setCategoryMargin(0.0);
+            return axis;
+        }
+
+        private static WaterfallBarRenderer createConfiguredWaterfallRenderer(
+                PlotOrientation orientation, boolean tooltips, boolean urls) {
+
+            WaterfallBarRenderer renderer = new WaterfallBarRenderer();
+
+            ItemLabelPosition position = (orientation == PlotOrientation.HORIZONTAL)
+                ? new ItemLabelPosition(ItemLabelAnchor.CENTER, TextAnchor.CENTER, TextAnchor.CENTER, Math.PI / 2.0)
+                : new ItemLabelPosition(ItemLabelAnchor.CENTER, TextAnchor.CENTER, TextAnchor.CENTER, 0.0);
+
             renderer.setDefaultPositiveItemLabelPosition(position);
             renderer.setDefaultNegativeItemLabelPosition(position);
-         }
-        else if (orientation == PlotOrientation.VERTICAL) {
-            ItemLabelPosition position = new ItemLabelPosition(
-                    ItemLabelAnchor.CENTER, TextAnchor.CENTER,
-                    TextAnchor.CENTER, 0.0);
-            renderer.setDefaultPositiveItemLabelPosition(position);
-            renderer.setDefaultNegativeItemLabelPosition(position);
-        }
-        if (tooltips) {
-            StandardCategoryToolTipGenerator generator
-                = new StandardCategoryToolTipGenerator();
-            renderer.setDefaultToolTipGenerator(generator);
-        }
-        if (urls) {
-            renderer.setDefaultItemURLGenerator(
-                    new StandardCategoryURLGenerator());
+
+            if (tooltips) {
+                renderer.setDefaultToolTipGenerator(new StandardCategoryToolTipGenerator());
+            }
+            if (urls) {
+                renderer.setDefaultItemURLGenerator(new StandardCategoryURLGenerator());
+            }
+
+            return renderer;
         }
 
-        CategoryPlot plot = new CategoryPlot(dataset, categoryAxis, valueAxis,
-                renderer);
-        plot.clearRangeMarkers();
-        Marker baseline = new ValueMarker(0.0);
-        baseline.setPaint(Color.BLACK);
-        plot.addRangeMarker(baseline, Layer.FOREGROUND);
-        plot.setOrientation(orientation);
-        JFreeChart chart = new JFreeChart(title, JFreeChart.DEFAULT_TITLE_FONT,
-                plot, legend);
-        currentTheme.apply(chart);
-        return chart;
+        private static Marker createBaselineMarker() {
+            Marker baseline = new ValueMarker(0.0);
+            baseline.setPaint(Color.BLACK);
+            return baseline;
+        }
 
-    }
 
     /**
      * Creates a polar plot for the specified dataset (x-values interpreted as
@@ -1127,23 +1179,29 @@ public abstract class ChartFactory {
      *
      * @return A chart.
      */
-    public static JFreeChart createPolarChart(String title, XYDataset dataset,
-            boolean legend, boolean tooltips, boolean urls) {
-
-        PolarPlot plot = new PolarPlot();
-        plot.setDataset(dataset);
-        NumberAxis rangeAxis = new NumberAxis();
-        rangeAxis.setAxisLineVisible(false);
-        rangeAxis.setTickMarksVisible(false);
-        rangeAxis.setTickLabelInsets(new RectangleInsets(0.0, 0.0, 0.0, 0.0));
-        plot.setAxis(rangeAxis);
-        plot.setRenderer(new DefaultPolarItemRenderer());
-        JFreeChart chart = new JFreeChart(
-                title, JFreeChart.DEFAULT_TITLE_FONT, plot, legend);
+    public static JFreeChart createPolarChart(String title, XYDataset dataset, ChartOptions options) {
+        PolarPlot plot = createPolarPlot(dataset);
+        JFreeChart chart = new JFreeChart(title, JFreeChart.DEFAULT_TITLE_FONT, plot, options.isLegend());
         currentTheme.apply(chart);
         return chart;
-
     }
+
+    private static PolarPlot createPolarPlot(XYDataset dataset) {
+        PolarPlot plot = new PolarPlot();
+        plot.setDataset(dataset);
+        plot.setAxis(createPolarRangeAxis());
+        plot.setRenderer(new DefaultPolarItemRenderer());
+        return plot;
+    }
+
+    private static NumberAxis createPolarRangeAxis() {
+        NumberAxis axis = new NumberAxis();
+        axis.setAxisLineVisible(false);
+        axis.setTickMarksVisible(false);
+        axis.setTickLabelInsets(new RectangleInsets(0.0, 0.0, 0.0, 0.0));
+        return axis;
+    }
+
     
     /**
      * Creates a scatter plot with default settings.  The chart object
@@ -1792,8 +1850,7 @@ public abstract class ChartFactory {
      */
     public static JFreeChart createBubbleChart(String title, String xAxisLabel,
             String yAxisLabel, XYZDataset dataset) {
-        return createBubbleChart(title, xAxisLabel, yAxisLabel, dataset,
-                PlotOrientation.VERTICAL, true, true, false);
+        return createBubbleChart(title, xAxisLabel, yAxisLabel, dataset);
     }
     
     /**
@@ -1816,33 +1873,41 @@ public abstract class ChartFactory {
      */
     public static JFreeChart createBubbleChart(String title, String xAxisLabel,
             String yAxisLabel, XYZDataset dataset, PlotOrientation orientation,
-            boolean legend, boolean tooltips, boolean urls) {
+            ChartOptions options) {
 
         Args.nullNotPermitted(orientation, "orientation");
-        NumberAxis xAxis = new NumberAxis(xAxisLabel);
-        xAxis.setAutoRangeIncludesZero(false);
-        NumberAxis yAxis = new NumberAxis(yAxisLabel);
-        yAxis.setAutoRangeIncludesZero(false);
+
+        NumberAxis xAxis = createNumberAxis(xAxisLabel);
+        NumberAxis yAxis = createNumberAxis(yAxisLabel);
 
         XYPlot plot = new XYPlot(dataset, xAxis, yAxis, null);
-
-        XYItemRenderer renderer = new XYBubbleRenderer(
-                XYBubbleRenderer.SCALE_ON_RANGE_AXIS);
-        if (tooltips) {
-            renderer.setDefaultToolTipGenerator(new StandardXYZToolTipGenerator());
-        }
-        if (urls) {
-            renderer.setURLGenerator(new StandardXYZURLGenerator());
-        }
-        plot.setRenderer(renderer);
+        plot.setRenderer(createBubbleRenderer(options));
         plot.setOrientation(orientation);
 
-        JFreeChart chart = new JFreeChart(title, JFreeChart.DEFAULT_TITLE_FONT,
-                plot, legend);
+        JFreeChart chart = new JFreeChart(title, JFreeChart.DEFAULT_TITLE_FONT, plot, options.isLegend());
         currentTheme.apply(chart);
         return chart;
-
     }
+
+    private static NumberAxis createNumberAxis(String label) {
+        NumberAxis axis = new NumberAxis(label);
+        axis.setAutoRangeIncludesZero(false);
+        return axis;
+    }
+
+    private static XYItemRenderer createBubbleRenderer(ChartOptions options) {
+        XYBubbleRenderer renderer = new XYBubbleRenderer(XYBubbleRenderer.SCALE_ON_RANGE_AXIS);
+
+        if (options.isTooltipsEnabled()) {
+            renderer.setDefaultToolTipGenerator(new StandardXYZToolTipGenerator());
+        }
+        if (options.isUrlsEnabled()) {
+            renderer.setURLGenerator(new StandardXYZURLGenerator());
+        }
+
+        return renderer;
+    }
+
     
     /**
      * Creates a histogram chart.  This chart is constructed with an
@@ -1885,10 +1950,33 @@ public abstract class ChartFactory {
             boolean urls) {
 
         Args.nullNotPermitted(orientation, "orientation");
+
+        NumberAxis xAxis = createXAxis(xAxisLabel);
+        NumberAxis yAxis = createYAxis(yAxisLabel);
+
+        XYItemRenderer renderer = createRenderer(tooltips, urls);
+
+        XYPlot plot = new XYPlot(dataset, xAxis, yAxis, renderer);
+        configurePlotOrientation(plot, orientation);
+
+        JFreeChart chart = new JFreeChart(title, JFreeChart.DEFAULT_TITLE_FONT,
+                plot, legend);
+        applyChartTheme(chart);
+
+        return chart;
+    }
+
+    private static NumberAxis createXAxis(String xAxisLabel) {
         NumberAxis xAxis = new NumberAxis(xAxisLabel);
         xAxis.setAutoRangeIncludesZero(false);
-        ValueAxis yAxis = new NumberAxis(yAxisLabel);
+        return xAxis;
+    }
 
+    private static NumberAxis createYAxis(String yAxisLabel) {
+        return new NumberAxis(yAxisLabel);
+    }
+
+    private static XYItemRenderer createRenderer(boolean tooltips, boolean urls) {
         XYItemRenderer renderer = new XYBarRenderer();
         if (tooltips) {
             renderer.setDefaultToolTipGenerator(new StandardXYToolTipGenerator());
@@ -1896,17 +1984,20 @@ public abstract class ChartFactory {
         if (urls) {
             renderer.setURLGenerator(new StandardXYURLGenerator());
         }
+        return renderer;
+    }
 
-        XYPlot plot = new XYPlot(dataset, xAxis, yAxis, renderer);
+    private static void configurePlotOrientation(XYPlot plot, PlotOrientation orientation) {
         plot.setOrientation(orientation);
         plot.setDomainZeroBaselineVisible(true);
         plot.setRangeZeroBaselineVisible(true);
-        JFreeChart chart = new JFreeChart(title, JFreeChart.DEFAULT_TITLE_FONT,
-                plot, legend);
-        currentTheme.apply(chart);
-        return chart;
-
     }
+
+    private static void applyChartTheme(JFreeChart chart) {
+        currentTheme.apply(chart);
+    }
+
+    
 
     /**
      * Creates and returns a default instance of a box and whisker chart
@@ -1985,27 +2076,40 @@ public abstract class ChartFactory {
      *
      */
     public static JFreeChart createWindPlot(String title, String xAxisLabel,
-            String yAxisLabel, WindDataset dataset, boolean legend,
-            boolean tooltips, boolean urls) {
+            String yAxisLabel, WindDataset dataset, ChartOptions options) {
 
-        ValueAxis xAxis = new DateAxis(xAxisLabel);
-        ValueAxis yAxis = new NumberAxis(yAxisLabel);
-        yAxis.setRange(-12.0, 12.0);
+        ValueAxis xAxis = createDateAxis(xAxisLabel);
+        ValueAxis yAxis = createYAxisWithRange(yAxisLabel, -12.0, 12.0);
 
-        WindItemRenderer renderer = new WindItemRenderer();
-        if (tooltips) {
-            renderer.setDefaultToolTipGenerator(new StandardXYToolTipGenerator());
-        }
-        if (urls) {
-            renderer.setURLGenerator(new StandardXYURLGenerator());
-        }
+        WindItemRenderer renderer = createWindRenderer(options);
+
         XYPlot plot = new XYPlot(dataset, xAxis, yAxis, renderer);
-        JFreeChart chart = new JFreeChart(title, JFreeChart.DEFAULT_TITLE_FONT,
-                plot, legend);
+        JFreeChart chart = new JFreeChart(title, JFreeChart.DEFAULT_TITLE_FONT, plot, options.isLegend());
         currentTheme.apply(chart);
         return chart;
-
     }
+
+    private static ValueAxis createDateAxisWind(String label) {
+        return new DateAxis(label);
+    }
+
+    private static ValueAxis createYAxisWithRange(String label, double min, double max) {
+        NumberAxis axis = new NumberAxis(label);
+        axis.setRange(min, max);
+        return axis;
+    }
+
+    private static WindItemRenderer createWindRenderer(ChartOptions options) {
+        WindItemRenderer renderer = new WindItemRenderer();
+        if (options.isTooltipsEnabled()) {
+            renderer.setDefaultToolTipGenerator(new StandardXYToolTipGenerator());
+        }
+        if (options.isUrlsEnabled()) {
+            renderer.setURLGenerator(new StandardXYURLGenerator());
+        }
+        return renderer;
+    }
+
 
     /**
      * Creates a wafer map chart.
